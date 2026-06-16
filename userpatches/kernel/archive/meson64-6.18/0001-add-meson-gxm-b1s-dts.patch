@@ -1,0 +1,440 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Builder <builder@local>
+Date: Mon, 16 Jun 2025 00:00:00 +0800
+Subject: [PATCH] arm64: dts: amlogic: add Meson GXM B1S board
+
+Add device tree for the Amlogic S912 (Meson GXM) B1S TV box.
+
+Hardware:
+- SoC: Amlogic S912 (8-core Cortex-A53)
+- RAM: 3GB DDR
+- WiFi/BT: AP6255 (BCM43455 + BCM2045A0)
+- Network: Internal 100M PHY (RMII)
+- Storage: eMMC + MicroSD
+- Video: HDMI 2.0 + CVBS
+- Audio: HDMI + T9015 DAC + SPDIF
+- IR: NEC protocol
+
+Signed-off-by: Builder <builder@local>
+---
+ arch/arm64/boot/dts/amlogic/Makefile          |   1 +
+ arch/arm64/boot/dts/amlogic/meson-gxm-b1s.dts | 399 +++++
+ 2 files changed, 400 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/amlogic/meson-gxm-b1s.dts
+
+diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/Makefile
+index 1111111..2222222 100644
+--- a/arch/arm64/boot/dts/amlogic/Makefile
++++ b/arch/arm64/boot/dts/amlogic/Makefile
+@@ -55,6 +55,7 @@
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxm-q200.dtb
++dtb-$(CONFIG_ARCH_MESON) += meson-gxm-b1s.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-gxm-q201.dtb
+
+diff --git a/arch/arm64/boot/dts/amlogic/meson-gxm-b1s.dts b/arch/arm64/boot/dts/amlogic/meson-gxm-b1s.dts
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/arch/arm64/boot/dts/amlogic/meson-gxm-b1s.dts
+@@ -0,0 +1,399 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2024 Community
++ *
++ * 鍩轰簬 Amlogic Q200 3G 鍘傚晢 DTS 閫嗗悜鐢熸垚
++ * 閫傜敤浜?Amlogic S912 (Meson GXM) B1S 鐩掑瓙
++ *
++ * 纭欢鐗瑰緛:
++ *   - SoC: Amlogic S912 (Meson GXM), 8 鏍?Cortex-A53
++ *   - RAM: 3GB DDR
++ *   - 瀛樺偍: eMMC + MicroSD
++ *   - 缃戠粶: 鍐呯疆 100M 浠ュお缃?(RMII, 鍐呴儴 PHY)
++ *   - WiFi/BT: AP6255 (BCM43455 SDIO WiFi + BCM2045A0 UART 钃濈墮)
++ *   - USB: 1x USB 3.0 + 1x USB 2.0
++ *   - 瑙嗛杈撳嚭: HDMI 2.0
++ *   - 闊抽: HDMI + 鍐呯疆 DAC (T9015) + S/PDIF
++ *   - IR: NEC 鍗忚绾㈠鎺ユ敹
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/sound/meson-aiu.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++
++#include "meson-gxm.dtsi"
++
++/ {
++	compatible = "amlogic,b1s", "amlogic,s912", "amlogic,meson-gxm";
++	model = "Amlogic Meson GXM (S912) B1S";
++
++	aliases {
++		serial0 = &uart_AO;
++		serial1 = &uart_A;
++		ethernet0 = &ethmac;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	/* NOTE: 3GB 鍐呭瓨锛屽疄闄呭ぇ灏忛€氬父鐢?U-Boot 鍦ㄥ惎鍔ㄦ椂浼犲叆 */
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x0 0x0 0xC0000000>;
++	};
++
++	/* 鐢垫簮鍩熷畾涔?*/
++
++	/* HDMI 5V 鐢垫簮 - 瀵瑰簲鍘傚晢 DTS 涓?hdmi5v_pwr_ctrl = <&gpio GPIODV_19 1> */
++	hdmi_5v: regulator-hdmi-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "HDMI_5V";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&gpio GPIOH_3 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-always-on;
++	};
++
++	vddio_ao18: regulator-vddio-ao18 {
++		compatible = "regulator-fixed";
++		regulator-name = "VDDIO_AO18";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++
++	vddio_boot: regulator-vddio-boot {
++		compatible = "regulator-fixed";
++		regulator-name = "VDDIO_BOOT";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++
++	vddao_3v3: regulator-vddao-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "VDDAO_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	vcc_3v3: regulator-vcc-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "VCC_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	/* eMMC 涓婄數搴忓垪 - BOOT_9 涓?eMMC 澶嶄綅寮曡剼 */
++	emmc_pwrseq: emmc-pwrseq {
++		compatible = "mmc-pwrseq-emmc";
++		reset-gpios = <&gpio BOOT_9 GPIO_ACTIVE_LOW>;
++	};
++
++	/* SDIO WiFi 渚涚數 - AP6255 WIFI_REG_ON, 鍘傚晢 phandle 0x35 pin 0x55 = GPIOX_6 */
++	sdio_pwrseq: sdio-pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		reset-gpios = <&gpio GPIOX_6 GPIO_ACTIVE_LOW>;
++		clocks = <&wifi32k>;
++		clock-names = "ext_clock";
++	};
++
++	/* WiFi 32K 鏃堕挓杈撳嚭 */
++	wifi32k: wifi32k {
++		compatible = "pwm-clock";
++		#clock-cells = <0>;
++		clock-frequency = <32768>;
++		pwms = <&pwm_ef 0 30518 0>;
++	};
++
++	/* 闊抽鐩稿叧 */
++
++	/* SPDIF 鏁板瓧闊抽铏氭嫙缂栬В鐮佸櫒 */
++	spdif_dit: audio-codec-0 {
++		#sound-dai-cells = <0>;
++		compatible = "linux,spdif-dit";
++		sound-name-prefix = "DIT";
++	};
++
++	/* HDMI 5V 渚涚數鐨勬ā鎷熷姛鏀?*/
++	dio2133: analog-amplifier {
++		compatible = "simple-audio-amplifier";
++		sound-name-prefix = "AU2";
++		VCC-supply = <&hdmi_5v>;
++		enable-gpios = <&gpio GPIOH_5 GPIO_ACTIVE_HIGH>;
++	};
++
++	/* 涓诲０鍗″畾涔?*/
++	sound {
++		compatible = "amlogic,gx-sound-card";
++		model = "B1S";
++		audio-aux-devs = <&dio2133>;
++		audio-widgets = "Line", "Lineout";
++		audio-routing = "AU2 INL", "ACODEC LOUT",
++				"AU2 INR", "ACODEC ROUT",
++				"Lineout", "AU2 OUTL",
++				"Lineout", "AU2 OUTR";
++
++		assigned-clocks = <&clkc CLKID_MPLL0>,
++				  <&clkc CLKID_MPLL1>,
++				  <&clkc CLKID_MPLL2>;
++		assigned-clock-parents = <0>, <0>, <0>;
++		assigned-clock-rates = <294912000>,
++				       <270950400>,
++				       <393216000>;
++
++		dai-link-0 {
++			sound-dai = <&aiu AIU_CPU CPU_I2S_FIFO>;
++		};
++
++		dai-link-1 {
++			sound-dai = <&aiu AIU_CPU CPU_SPDIF_FIFO>;
++		};
++
++		dai-link-2 {
++			sound-dai = <&aiu AIU_CPU CPU_I2S_ENCODER>;
++			dai-format = "i2s";
++			mclk-fs = <256>;
++
++			codec-0 {
++				sound-dai = <&aiu AIU_HDMI CTRL_I2S>;
++			};
++		};
++
++		dai-link-3 {
++			sound-dai = <&aiu AIU_CPU CPU_SPDIF_ENCODER>;
++
++			codec-0 {
++				sound-dai = <&spdif_dit>;
++			};
++		};
++
++		dai-link-4 {
++			sound-dai = <&aiu AIU_HDMI CTRL_OUT>;
++
++			codec-0 {
++				sound-dai = <&hdmi_tx>;
++			};
++		};
++	};
++
++	/* LED 鎸囩ず鐏?- 鍘傚晢 phandle 0x35 pin 0x09 = GPIOZ_9, active_low */
++	leds {
++		compatible = "gpio-leds";
++
++		led-blue {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&gpio GPIOZ_9 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++
++	/* CVBS 澶嶅悎瑙嗛杈撳嚭鎺ュ彛 */
++	cvbs-connector {
++		compatible = "composite-video-connector";
++
++		port {
++			cvbs_connector_in: endpoint {
++				remote-endpoint = <&cvbs_vdac_out>;
++			};
++		};
++	};
++
++	/* HDMI 鎺ュ彛 */
++	hdmi-connector {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_connector_in: endpoint {
++				remote-endpoint = <&hdmi_tx_tmds_out>;
++			};
++		};
++	};
++
++	/* 鐢垫簮鎸夐敭 - 瀵瑰簲鍘傚晢 DTS 涓?key_pin = <&gpio_ao GPIOAO_2 0> */
++	gpio-keys-polled {
++		compatible = "gpio-keys-polled";
++		poll-interval = <100>;
++
++		power-button {
++			label = "power";
++			linux,code = <KEY_POWER>;
++			gpios = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	/* ADC 鎸夐敭 */
++	adc-keys {
++		compatible = "adc-keys";
++		io-channels = <&saradc 0>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1710000>;
++
++		button-function {
++			label = "Update";
++			linux,code = <KEY_VENDOR>;
++			press-threshold-microvolt = <10000>;
++		};
++	};
++};
++
++/* ============================================ */
++/*          澶栬鑺傜偣瑕嗗啓 (dtsi overlay)          */
++/* ============================================ */
++
++/* 闊抽鎺ュ彛鍗曞厓 */
++&aiu {
++	status = "okay";
++};
++
++/* CVBS 妯℃嫙瑙嗛 DAC */
++&cvbs_vdac {
++	status = "okay";
++};
++
++/* 浠ュお缃?- 鍐呴儴 100M PHY (RMII) */
++&ethmac {
++	status = "okay";
++	phy-handle = <&internal_phy>;
++	phy-mode = "rmii";
++};
++
++/* HDMI 鍙戦€佸櫒 */
++&hdmi_tx {
++	status = "okay";
++	pinctrl-0 = <&hdmi_hpd_pins>, <&hdmi_i2c_pins>;
++	pinctrl-names = "default";
++	hdmi-supply = <&hdmi_5v>;
++};
++
++&hdmi_tx_tmds_port {
++	hdmi_tx_tmds_out: endpoint {
++		remote-endpoint = <&hdmi_connector_in>;
++	};
++};
++
++/* 绾㈠閬ユ帶 - NEC 鍗忚, GPIOAO_7 */
++&ir {
++	status = "okay";
++	pinctrl-0 = <&remote_input_ao_pins>;
++	pinctrl-names = "default";
++};
++
++/* SAR ADC */
++&saradc {
++	status = "okay";
++	vref-supply = <&vddio_ao18>;
++};
++
++/* eMMC 瀛樺偍 */
++&sd_emmc_c {
++	status = "okay";
++	pinctrl-0 = <&emmc_pins>, <&emmc_ds_pins>;
++	pinctrl-1 = <&emmc_clk_gate_pins>;
++	pinctrl-names = "default", "clk-gate";
++
++	bus-width = <8>;
++	cap-mmc-highspeed;
++	mmc-ddr-1_8v;
++	mmc-hs200-1_8v;
++	max-frequency = <200000000>;
++	non-removable;
++	disable-wp;
++
++	mmc-pwrseq = <&emmc_pwrseq>;
++	vmmc-supply = <&vcc_3v3>;
++	vqmmc-supply = <&vddio_boot>;
++};
++
++/* SD 鍗?*/
++&sd_emmc_b {
++	status = "okay";
++	pinctrl-0 = <&sdcard_pins>;
++	pinctrl-1 = <&sdcard_clk_gate_pins>;
++	pinctrl-names = "default", "clk-gate";
++
++	bus-width = <4>;
++	cap-sd-highspeed;
++	max-frequency = <50000000>;
++	disable-wp;
++
++	cd-gpios = <&gpio CARD_6 GPIO_ACTIVE_LOW>;
++
++	vmmc-supply = <&vddao_3v3>;
++	vqmmc-supply = <&vddio_boot>;
++};
++
++/* SDIO (WiFi - AP6255/BCM43455) */
++&sd_emmc_a {
++	status = "okay";
++	pinctrl-0 = <&sdio_pins>;
++	pinctrl-1 = <&sdio_clk_gate_pins>;
++	pinctrl-names = "default", "clk-gate";
++
++	bus-width = <4>;
++	cap-sd-highspeed;
++	max-frequency = <100000000>;
++	non-removable;
++	disable-wp;
++
++	/* AP6255 WiFi 鐢垫簮搴忓垪 */
++	mmc-pwrseq = <&sdio_pwrseq>;
++
++	vmmc-supply = <&vddao_3v3>;
++	vqmmc-supply = <&vddio_ao18>;
++
++	/* AP6255 WiFi (Broadcom BCM43455/brcmfmac) */
++	brcmf: wifi@1 {
++		reg = <1>;
++		compatible = "brcm,bcm4329-fmac";
++		/* WIFI_WAKE_HOST - 鍘傚晢 phandle 0x35 pin 0x56 = GPIOX_7 */
++		interrupt-parent = <&gpio>;
++		interrupts = <GPIOX_7 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-names = "host-wake";
++	};
++};
++
++/* 璋冭瘯涓插彛 (AO UART, 115200 8N1) */
++&uart_AO {
++	status = "okay";
++	pinctrl-0 = <&uart_ao_a_pins>;
++	pinctrl-names = "default";
++};
++
++/* UART-A (AP6255 钃濈墮, 4 绾?UART 鍚‖浠舵祦鎺? */
++&uart_A {
++	status = "okay";
++	pinctrl-0 = <&uart_a_pins>, <&uart_a_cts_rts_pins>;
++	pinctrl-names = "default";
++	uart-has-rtscts;
++
++	/* AP6255 钃濈墮 (Broadcom BCM2045A0/hci_bcm) */
++	bluetooth {
++		compatible = "brcm,bcm43438-bt";
++		/* BT_REG_ON - 鍘傚晢 phandle 0x35 pin 0x60 = GPIOX_17 */
++		shutdown-gpios = <&gpio GPIOX_17 GPIO_ACTIVE_HIGH>;
++		max-speed = <2000000>;
++		clocks = <&wifi32k>;
++		clock-names = "lpo";
++	};
++};
++
++/* USB 2.0/3.0 */
++&usb {
++	status = "okay";
++	dr_mode = "host";
++};
++
++/* USB 2.0 PHY */
++&usb2_phy0 {
++	phy-supply = <&vddao_3v3>;
++};
++
++&usb2_phy1 {
++	phy-supply = <&vddao_3v3>;
++};
+-- 
+2.34.1
