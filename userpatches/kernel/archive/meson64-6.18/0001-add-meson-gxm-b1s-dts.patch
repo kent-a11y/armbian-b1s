@@ -26,7 +26,7 @@ diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/
 index 1111111..2222222 100644
 --- a/arch/arm64/boot/dts/amlogic/Makefile
 +++ b/arch/arm64/boot/dts/amlogic/Makefile
-@@ -55,6 +55,7 @@
+@@ -55,2 +55,3 @@
  dtb-$(CONFIG_ARCH_MESON) += meson-gxm-q200.dtb
 +dtb-$(CONFIG_ARCH_MESON) += meson-gxm-b1s.dtb
  dtb-$(CONFIG_ARCH_MESON) += meson-gxm-q201.dtb
