@@ -301,7 +301,7 @@ index 0000000..3333333
 +/* 以太网 - 内部 100M PHY (RMII) */
 +&ethmac {
 +	status = "okay";
-+	phy-handle = <&internal_phy>;
++	phy-handle = <&internal_ephy>;
 +	phy-mode = "rmii";
 +};
 +
