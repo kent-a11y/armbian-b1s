@@ -36,7 +36,7 @@ new file mode 100644
 index 0000000..3333333
 --- /dev/null
 +++ b/arch/arm64/boot/dts/amlogic/meson-gxm-b1s.dts
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,402 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2024 Community
@@ -64,6 +64,7 @@ index 0000000..3333333
 +#include <dt-bindings/interrupt-controller/irq.h>
 +#include <dt-bindings/gpio/gpio.h>
 +#include <dt-bindings/gpio/meson-gxl-gpio.h>
++#include <dt-bindings/clock/gxbb-clkc.h>
 +
 +#include "meson-gxm.dtsi"
 +
