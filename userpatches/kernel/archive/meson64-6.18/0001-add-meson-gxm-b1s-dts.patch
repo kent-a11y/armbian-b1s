@@ -41,19 +41,19 @@ index 0000000..3333333
 +/*
 + * Copyright (c) 2024 Community
 + *
-+ * 鍩轰簬 Amlogic Q200 3G 鍘傚晢 DTS 閫嗗悜鐢熸垚
-+ * 閫傜敤浜?Amlogic S912 (Meson GXM) B1S 鐩掑瓙
++ * 基于 Amlogic Q200 3G 厂商 DTS 逆向生成
++ * 适用于 Amlogic S912 (Meson GXM) B1S 盒子
 + *
-+ * 纭欢鐗瑰緛:
-+ *   - SoC: Amlogic S912 (Meson GXM), 8 鏍?Cortex-A53
++ * 硬件特征:
++ *   - SoC: Amlogic S912 (Meson GXM), 8 核 Cortex-A53
 + *   - RAM: 3GB DDR
-+ *   - 瀛樺偍: eMMC + MicroSD
-+ *   - 缃戠粶: 鍐呯疆 100M 浠ュお缃?(RMII, 鍐呴儴 PHY)
-+ *   - WiFi/BT: AP6255 (BCM43455 SDIO WiFi + BCM2045A0 UART 钃濈墮)
++ *   - 存储: eMMC + MicroSD
++ *   - 网络: 内置 100M 以太网 (RMII, 内部 PHY)
++ *   - WiFi/BT: AP6255 (BCM43455 SDIO WiFi + BCM2045A0 UART 蓝牙)
 + *   - USB: 1x USB 3.0 + 1x USB 2.0
-+ *   - 瑙嗛杈撳嚭: HDMI 2.0
-+ *   - 闊抽: HDMI + 鍐呯疆 DAC (T9015) + S/PDIF
-+ *   - IR: NEC 鍗忚绾㈠鎺ユ敹
++ *   - 视频输出: HDMI 2.0
++ *   - 音频: HDMI + 内置 DAC (T9015) + S/PDIF
++ *   - IR: NEC 协议红外接收
 + */
 +
 +/dts-v1/;
@@ -79,15 +79,15 @@ index 0000000..3333333
 +		stdout-path = "serial0:115200n8";
 +	};
 +
-+	/* NOTE: 3GB 鍐呭瓨锛屽疄闄呭ぇ灏忛€氬父鐢?U-Boot 鍦ㄥ惎鍔ㄦ椂浼犲叆 */
++	/* NOTE: 3GB 内存，实际大小通常由 U-Boot 在启动时传入 */
 +	memory@0 {
 +		device_type = "memory";
 +		reg = <0x0 0x0 0x0 0xC0000000>;
 +	};
 +
-+	/* 鐢垫簮鍩熷畾涔?*/
++	/* 电源域定义*/
 +
-+	/* HDMI 5V 鐢垫簮 - 瀵瑰簲鍘傚晢 DTS 涓?hdmi5v_pwr_ctrl = <&gpio GPIODV_19 1> */
++	/* HDMI 5V 电源 - 对应厂商 DTS 中 hdmi5v_pwr_ctrl = <&gpio GPIODV_19 1> */
 +	hdmi_5v: regulator-hdmi-5v {
 +		compatible = "regulator-fixed";
 +		regulator-name = "HDMI_5V";
@@ -126,13 +126,13 @@ index 0000000..3333333
 +		regulator-max-microvolt = <3300000>;
 +	};
 +
-+	/* eMMC 涓婄數搴忓垪 - BOOT_9 涓?eMMC 澶嶄綅寮曡剼 */
++	/* eMMC 上电序列 - BOOT_9 为 eMMC 复位引脚 */
 +	emmc_pwrseq: emmc-pwrseq {
 +		compatible = "mmc-pwrseq-emmc";
 +		reset-gpios = <&gpio BOOT_9 GPIO_ACTIVE_LOW>;
 +	};
 +
-+	/* SDIO WiFi 渚涚數 - AP6255 WIFI_REG_ON, 鍘傚晢 phandle 0x35 pin 0x55 = GPIOX_6 */
++	/* SDIO WiFi 供电 - AP6255 WIFI_REG_ON, 厂商 phandle 0x35 pin 0x55 = GPIOX_6 */
 +	sdio_pwrseq: sdio-pwrseq {
 +		compatible = "mmc-pwrseq-simple";
 +		reset-gpios = <&gpio GPIOX_6 GPIO_ACTIVE_LOW>;
@@ -140,7 +140,7 @@ index 0000000..3333333
 +		clock-names = "ext_clock";
 +	};
 +
-+	/* WiFi 32K 鏃堕挓杈撳嚭 */
++	/* WiFi 32K 时钟输出 */
 +	wifi32k: wifi32k {
 +		compatible = "pwm-clock";
 +		#clock-cells = <0>;
@@ -148,16 +148,16 @@ index 0000000..3333333
 +		pwms = <&pwm_ef 0 30518 0>;
 +	};
 +
-+	/* 闊抽鐩稿叧 */
++	/* 音频相关 */
 +
-+	/* SPDIF 鏁板瓧闊抽铏氭嫙缂栬В鐮佸櫒 */
++	/* SPDIF 数字音频虚拟编解码器 */
 +	spdif_dit: audio-codec-0 {
 +		#sound-dai-cells = <0>;
 +		compatible = "linux,spdif-dit";
 +		sound-name-prefix = "DIT";
 +	};
 +
-+	/* HDMI 5V 渚涚數鐨勬ā鎷熷姛鏀?*/
++	/* HDMI 5V 供电的模拟功放*/
 +	dio2133: analog-amplifier {
 +		compatible = "simple-audio-amplifier";
 +		sound-name-prefix = "AU2";
@@ -165,7 +165,7 @@ index 0000000..3333333
 +		enable-gpios = <&gpio GPIOH_5 GPIO_ACTIVE_HIGH>;
 +	};
 +
-+	/* 涓诲０鍗″畾涔?*/
++	/* 主声卡定义*/
 +	sound {
 +		compatible = "amlogic,gx-sound-card";
 +		model = "B1S";
@@ -219,7 +219,7 @@ index 0000000..3333333
 +		};
 +	};
 +
-+	/* LED 鎸囩ず鐏?- 鍘傚晢 phandle 0x35 pin 0x09 = GPIOZ_9, active_low */
++	/* LED 指示灯 - 厂商 phandle 0x35 pin 0x09 = GPIOZ_9, active_low */
 +	leds {
 +		compatible = "gpio-leds";
 +
@@ -231,7 +231,7 @@ index 0000000..3333333
 +		};
 +	};
 +
-+	/* CVBS 澶嶅悎瑙嗛杈撳嚭鎺ュ彛 */
++	/* CVBS 复合视频输出接口 */
 +	cvbs-connector {
 +		compatible = "composite-video-connector";
 +
@@ -242,7 +242,7 @@ index 0000000..3333333
 +		};
 +	};
 +
-+	/* HDMI 鎺ュ彛 */
++	/* HDMI 接口 */
 +	hdmi-connector {
 +		compatible = "hdmi-connector";
 +		type = "a";
@@ -254,7 +254,7 @@ index 0000000..3333333
 +		};
 +	};
 +
-+	/* 鐢垫簮鎸夐敭 - 瀵瑰簲鍘傚晢 DTS 涓?key_pin = <&gpio_ao GPIOAO_2 0> */
++	/* 电源按键 - 对应厂商 DTS 中 key_pin = <&gpio_ao GPIOAO_2 0> */
 +	gpio-keys-polled {
 +		compatible = "gpio-keys-polled";
 +		poll-interval = <100>;
@@ -266,7 +266,7 @@ index 0000000..3333333
 +		};
 +	};
 +
-+	/* ADC 鎸夐敭 */
++	/* ADC 按键 */
 +	adc-keys {
 +		compatible = "adc-keys";
 +		io-channels = <&saradc 0>;
@@ -282,27 +282,27 @@ index 0000000..3333333
 +};
 +
 +/* ============================================ */
-+/*          澶栬鑺傜偣瑕嗗啓 (dtsi overlay)          */
++/*          外设节点覆写 (dtsi overlay)          */
 +/* ============================================ */
 +
-+/* 闊抽鎺ュ彛鍗曞厓 */
++/* 音频接口单元 */
 +&aiu {
 +	status = "okay";
 +};
 +
-+/* CVBS 妯℃嫙瑙嗛 DAC */
++/* CVBS 模拟视频 DAC */
 +&cvbs_vdac {
 +	status = "okay";
 +};
 +
-+/* 浠ュお缃?- 鍐呴儴 100M PHY (RMII) */
++/* 以太网 - 内部 100M PHY (RMII) */
 +&ethmac {
 +	status = "okay";
 +	phy-handle = <&internal_phy>;
 +	phy-mode = "rmii";
 +};
 +
-+/* HDMI 鍙戦€佸櫒 */
++/* HDMI 发送器 */
 +&hdmi_tx {
 +	status = "okay";
 +	pinctrl-0 = <&hdmi_hpd_pins>, <&hdmi_i2c_pins>;
@@ -316,7 +316,7 @@ index 0000000..3333333
 +	};
 +};
 +
-+/* 绾㈠閬ユ帶 - NEC 鍗忚, GPIOAO_7 */
++/* 红外遥控 - NEC 协议, GPIOAO_7 */
 +&ir {
 +	status = "okay";
 +	pinctrl-0 = <&remote_input_ao_pins>;
@@ -329,7 +329,7 @@ index 0000000..3333333
 +	vref-supply = <&vddio_ao18>;
 +};
 +
-+/* eMMC 瀛樺偍 */
++/* eMMC 存储 */
 +&sd_emmc_c {
 +	status = "okay";
 +	pinctrl-0 = <&emmc_pins>, <&emmc_ds_pins>;
@@ -349,7 +349,7 @@ index 0000000..3333333
 +	vqmmc-supply = <&vddio_boot>;
 +};
 +
-+/* SD 鍗?*/
++/* SD 卡*/
 +&sd_emmc_b {
 +	status = "okay";
 +	pinctrl-0 = <&sdcard_pins>;
@@ -380,7 +380,7 @@ index 0000000..3333333
 +	non-removable;
 +	disable-wp;
 +
-+	/* AP6255 WiFi 鐢垫簮搴忓垪 */
++	/* AP6255 WiFi 电源序列 */
 +	mmc-pwrseq = <&sdio_pwrseq>;
 +
 +	vmmc-supply = <&vddao_3v3>;
@@ -390,31 +390,31 @@ index 0000000..3333333
 +	brcmf: wifi@1 {
 +		reg = <1>;
 +		compatible = "brcm,bcm4329-fmac";
-+		/* WIFI_WAKE_HOST - 鍘傚晢 phandle 0x35 pin 0x56 = GPIOX_7 */
++		/* WIFI_WAKE_HOST - 厂商 phandle 0x35 pin 0x56 = GPIOX_7 */
 +		interrupt-parent = <&gpio>;
 +		interrupts = <GPIOX_7 IRQ_TYPE_LEVEL_LOW>;
 +		interrupt-names = "host-wake";
 +	};
 +};
 +
-+/* 璋冭瘯涓插彛 (AO UART, 115200 8N1) */
++/* 调试串口 (AO UART, 115200 8N1) */
 +&uart_AO {
 +	status = "okay";
 +	pinctrl-0 = <&uart_ao_a_pins>;
 +	pinctrl-names = "default";
 +};
 +
-+/* UART-A (AP6255 钃濈墮, 4 绾?UART 鍚‖浠舵祦鎺? */
++/* UART-A (AP6255 蓝牙, 4 线 UART 含硬件流控) */
 +&uart_A {
 +	status = "okay";
 +	pinctrl-0 = <&uart_a_pins>, <&uart_a_cts_rts_pins>;
 +	pinctrl-names = "default";
 +	uart-has-rtscts;
 +
-+	/* AP6255 钃濈墮 (Broadcom BCM2045A0/hci_bcm) */
++	/* AP6255 蓝牙 (Broadcom BCM2045A0/hci_bcm) */
 +	bluetooth {
 +		compatible = "brcm,bcm43438-bt";
-+		/* BT_REG_ON - 鍘傚晢 phandle 0x35 pin 0x60 = GPIOX_17 */
++		/* BT_REG_ON - 厂商 phandle 0x35 pin 0x60 = GPIOX_17 */
 +		shutdown-gpios = <&gpio GPIOX_17 GPIO_ACTIVE_HIGH>;
 +		max-speed = <2000000>;
 +		clocks = <&wifi32k>;
