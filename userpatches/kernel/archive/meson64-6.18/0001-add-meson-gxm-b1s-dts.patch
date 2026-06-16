@@ -63,7 +63,7 @@ index 0000000..3333333
 +#include <dt-bindings/sound/meson-aiu.h>
 +#include <dt-bindings/interrupt-controller/irq.h>
 +#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/gpio/meson-gxbb-gpio.h>
++#include <dt-bindings/gpio/meson-gxl-gpio.h>
 +
 +#include "meson-gxm.dtsi"
 +
